@@ -3,4 +3,4 @@ TO DO
 can pause and resume?
 mac,linux script
 jar
-fix opening results?
+expire date show
