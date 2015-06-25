@@ -477,11 +477,11 @@ public class CrossSpeciesGeneFinder {
         if(sc6 != null) sc6.close();
       }
       wInfo.println("");
-      // here sort by evalue
       mapEvalueForEachID = sortByValue(mapEvalueForEachID);
-      
-      for (String currID : mapEvalueForEachID.keySet())
-      {
+      int doneGenes = 1;
+      for (String currID : mapEvalueForEachID.keySet()) {
+        if(doneGenes > 5) break;
+        doneGenes++;
         String currDesc = mapIDToDescription.get(currID);
         double evalue = mapEvalueForEachID.get(currID);
         long currStart = mapLowestForEachID.get(currID);
