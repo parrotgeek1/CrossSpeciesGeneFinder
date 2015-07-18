@@ -1,6 +1,0 @@
-TO DO
-
-can pause and resume?
-mac,linux script
-jar
-expire date show
