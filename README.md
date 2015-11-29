@@ -41,6 +41,7 @@ Blank lines, or lines consisting only of spaces, are silently ignored.
 To Do
 ---
 
+* add NOT specifying max e value or species on batch file
 * can pause and resume?
 * mac,linux script
 * jar
