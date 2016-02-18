@@ -751,8 +751,8 @@ public class CrossSpeciesGeneFinder {
             }
             if(blastStatus.equals("FAILED")) {
               o.println(" BLAST Server Said Failed!");
-              wInfo.flush();
               wInfo.println("*** BLAST SERVER SAID FAILED! ***");
+              wInfo.flush();
               sc5.close();
               o.println("Waiting 30 seconds to be nice to NCBI's server...");
               mySleep(30000);
