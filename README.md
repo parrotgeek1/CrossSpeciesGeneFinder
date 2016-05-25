@@ -1,7 +1,7 @@
 # CrossSpeciesGeneFinder
 Use the NCBI database to find smilar genes across species!
 
-Run the !!! RUN.bat file to start. You will be given instructions. Java is required. Windows only for now.
+Double-click CSGF.jar to start. You will be given instructions. Java is required
 
 CSGF Batch File Format
 ---
@@ -43,6 +43,4 @@ To Do
 
 * add NOT specifying max e value or species on batch file
 * can pause and resume?
-* mac,linux script
-* jar
 * expire date show

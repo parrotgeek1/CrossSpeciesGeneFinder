@@ -4,14 +4,13 @@ import java.util.*;
 import javax.sound.sampled.*;
 import java.awt.*;
 import javax.swing.*;
+import java.security.CodeSource;
 
 public class CrossSpeciesGeneFinder {
   
-  // v v v v v
-  private static boolean debugNoWait = false; //true;
-  // ^ ^ ^ ^ ^
+  private static boolean debugNoWait = false;
   
-  public static class JTextAreaOutputStream extends OutputStream
+  private static class JTextAreaOutputStream extends OutputStream
   {
     private final JTextArea destination;
     
@@ -43,8 +42,12 @@ public class CrossSpeciesGeneFinder {
       write (new byte [] {(byte)b}, 0, 1);
     }
   }
-  static PrintStream o = null;
-  public static void main(String[] args){
+  PrintStream o = null;
+  // workaround for issues with getClass
+  public static void main(String[] args) {
+    new CrossSpeciesGeneFinder().main2(args);
+  }
+  private void main2(String[] args){
     try {
       // Set System L&F
       UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -236,11 +239,10 @@ public class CrossSpeciesGeneFinder {
     }
     String dbname1 = "genomic/" + txid + "/" + assembly;
     o.println("Got database name: " + dbname1);
-    
     for(String geneQuery : queryList) {
       PrintWriter wInfo = null;
       try {
-        new File("Results/"+species+"/"+geneQuery).mkdirs(); 
+        new File("Results/"+species+"/"+geneQuery).mkdirs();
         wInfo = new PrintWriter("Results/"+species+"/"+geneQuery+"/Info.txt", "UTF-8");
       } catch (UnsupportedEncodingException e) {
         o.println("ERROR: Failed to create results file!");
@@ -656,6 +658,8 @@ public class CrossSpeciesGeneFinder {
         wInfo.println("");
         
       }
+      wInfo.println("");
+      wInfo.println("[QUERY COMPLETE AT DATE: "+new Date().toString()+"]");
       wInfo.close();
       o.println("");
     }
@@ -699,7 +703,7 @@ public class CrossSpeciesGeneFinder {
   }
   
 // HTTP POST request
-  public static InputStream doPost(String url, String query) throws MalformedURLException{
+  private InputStream doPost(String url, String query) throws MalformedURLException{
     try {
       URL obj = new URL(url);
       HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -720,7 +724,7 @@ public class CrossSpeciesGeneFinder {
     }
   }
   
-  public static String doBlastAndGetRID(String query,PrintWriter wInfo) throws IOException, MalformedURLException, ArrayIndexOutOfBoundsException, NullPointerException {
+  private String doBlastAndGetRID(String query,PrintWriter wInfo) throws IOException, MalformedURLException, ArrayIndexOutOfBoundsException, NullPointerException {
     boolean blastx = query.contains("&PROGRAM=blastx&");
     String blastRID = "";
     int i = 0;
@@ -791,20 +795,20 @@ public class CrossSpeciesGeneFinder {
     } while(i < 5 && !blastx);
     return "";
   }
-  public static void saveTextFile(String contents, String path) throws IOException {
+  private void saveTextFile(String contents, String path) throws IOException {
     PrintWriter out = new PrintWriter(new FileWriter(new File(path)));
     out.println(contents);
     out.close();
   }
-  public static void playWav(String path) {
+  private void playWav(String path) {
     try {
-      File yourFile = new File(path);
+      InputStream wavStream = getClass().getClassLoader().getResourceAsStream(path);
       AudioInputStream stream;
       AudioFormat format;
       DataLine.Info info;
       Clip clip;
       
-      stream = AudioSystem.getAudioInputStream(yourFile);
+      stream = AudioSystem.getAudioInputStream(wavStream);
       format = stream.getFormat();
       info = new DataLine.Info(Clip.class, format);
       clip = (Clip) AudioSystem.getLine(info);
@@ -820,7 +824,7 @@ public class CrossSpeciesGeneFinder {
       o.println("WARNING: couldn't find or play sound: " + path);
     }
   }
-  public static void mySleep(long time) {
+  private void mySleep(long time) {
     if(debugNoWait) return;
     try {
       Thread.sleep(time);
@@ -829,7 +833,7 @@ public class CrossSpeciesGeneFinder {
       Thread.currentThread().interrupt();
     }
   }
-  public static void mySleepAlways(long time) {
+  private void mySleepAlways(long time) {
     try {
       Thread.sleep(time);
     } catch(InterruptedException e) {
@@ -854,7 +858,7 @@ public class CrossSpeciesGeneFinder {
     
   }
   
-  public static<K, V extends Comparable<V>> Map<K, V> sortByValue(Map<K, V> unsortedMap)
+  private static<K, V extends Comparable<V>> Map<K, V> sortByValue(Map<K, V> unsortedMap)
   {
     Map<K, V> sortedMap = new
       TreeMap<K, V>(new ValueComparator<K, V>(unsortedMap));
