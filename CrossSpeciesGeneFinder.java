@@ -6,6 +6,11 @@ import java.awt.*;
 import javax.swing.*;
 
 public class CrossSpeciesGeneFinder {
+  
+  // v v v v v
+  private static boolean debugNoWait = false; //true;
+  // ^ ^ ^ ^ ^
+  
   public static class JTextAreaOutputStream extends OutputStream
   {
     private final JTextArea destination;
@@ -84,7 +89,7 @@ public class CrossSpeciesGeneFinder {
       FileDialog fd = new FileDialog((Frame)null, "Choose accession number list file", FileDialog.LOAD);
       fd.setFile("*.txt");
       fd.setVisible(true);
-      String filename = fd.getFile();
+      String filename = fd.getDirectory()+fd.getFile();
       if (filename == null || filename.equals("")) {
         System.exit(0);
         return;
@@ -113,7 +118,7 @@ public class CrossSpeciesGeneFinder {
         }
         scQL.close();
       } catch(IOException e) {
-        JOptionPane.showMessageDialog(null, "Error loading file!"+e.getMessage(), "CSGF Error", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(null, "Error loading file! "+e.getMessage(), "CSGF Error", JOptionPane.ERROR_MESSAGE);
         System.exit(0);
         return;
       }
@@ -742,11 +747,13 @@ public class CrossSpeciesGeneFinder {
           String line = sc5.nextLine().trim();
           if(line.startsWith("Status=")) {
             blastStatus = line.split("=")[1].trim();
+            // it gets here and then stops working
+            //o.println("[DEBUG] blastStatus " + blastStatus);
             if(blastStatus.equals("READY")) {
               o.println(" Finished!");
               sc5.close();
-              o.println("Waiting 30 seconds to be nice to NCBI's server...");
-              mySleep(30000);
+              o.println("Waiting 15 seconds to be nice to NCBI's server...");
+              mySleep(15000);
               return blastRID;
             }
             if(blastStatus.equals("FAILED")) {
@@ -778,6 +785,7 @@ public class CrossSpeciesGeneFinder {
           }
         }
         sc5.close();
+        mySleepAlways(2000);
       }
       i++;
     } while(i < 5 && !blastx);
@@ -813,6 +821,15 @@ public class CrossSpeciesGeneFinder {
     }
   }
   public static void mySleep(long time) {
+    if(debugNoWait) return;
+    try {
+      Thread.sleep(time);
+    } catch(InterruptedException e) {
+      // Restore the interrupted status
+      Thread.currentThread().interrupt();
+    }
+  }
+  public static void mySleepAlways(long time) {
     try {
       Thread.sleep(time);
     } catch(InterruptedException e) {
