@@ -1,5 +1,5 @@
 # CrossSpeciesGeneFinder
-Use the NCBI database to find smilar genes across species!
+Use the NCBI database to find similar genes across species!
 
 Double-click CSGF.jar to start. You will be given instructions. Java is required
 
