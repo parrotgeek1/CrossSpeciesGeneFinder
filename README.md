@@ -45,4 +45,6 @@ To Do
 
 * add NOT specifying max e value or species on batch file
 * can pause and resume?
-* expire date show
+* expire date show for results
+* warn on close
+* more code cleanup
