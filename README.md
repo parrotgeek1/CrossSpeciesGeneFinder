@@ -5,8 +5,6 @@ Open source, cross-platform tool to search for similar genes across species usin
 Double-click CSGF.jar to start. You will be given instructions. Java is required.
 # [Source Code](https://github.com/parrotgeek1/CrossSpeciesGeneFinder)
 
-# NOTE: As of April 2017, this program does not work at all due to significant changes in NCBI's backend server. It will eventually be fixed, but I have no ETA.
-
 CSGF Batch File Format
 ---
 

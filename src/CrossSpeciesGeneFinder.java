@@ -77,7 +77,10 @@ public class CrossSpeciesGeneFinder {
     
     JTextAreaOutputStream out = new JTextAreaOutputStream (textArea);
     System.setOut (new PrintStream (out));
+	  System.setErr (new PrintStream (out));
     o = System.out;
+	  HttpURLConnection.setFollowRedirects(true);
+	  
     String species = null;
     String evalueStr = null;
     String buffStr = null;
@@ -189,30 +192,39 @@ public class CrossSpeciesGeneFinder {
     String niceTitle = "";
     ArrayList<String> errorList = new ArrayList<String>();
     try {
-      URL url2 = new URL("http://www.ncbi.nlm.nih.gov/genome/?term="+URLEncoder.encode(species, "UTF-8"));
-      sc2 = new Scanner(url2.openStream());
+      URL url2 = new URL("https://www.ncbi.nlm.nih.gov/genome/?term="+URLEncoder.encode(species, "UTF-8"));
+      sc2 = new Scanner(url2.openConnection().getInputStream());
       while(sc2.hasNextLine()) {
         String line = sc2.nextLine().trim();
         if(line.startsWith("<title>") && line.endsWith("</title>")) {
           niceTitle =  line.split(">")[1].split("-")[0].trim();
           String id = niceTitle.split("\\(ID ")[1].split("\\)")[0];
           o.println("Loaded basic info for " + niceTitle);
-          url3 = new URL("http://www.ncbi.nlm.nih.gov/assembly?LinkName=genome_assembly&from_uid="+URLEncoder.encode(id, "UTF-8"));
-          break;
+          url3 = new URL("https://www.ncbi.nlm.nih.gov/assembly?LinkName=genome_assembly&from_uid="+URLEncoder.encode(id, "UTF-8"));
+			break;
         }
       }
       
-      sc3 = new Scanner(url3.openStream());
+      sc3 = new Scanner(url3.openConnection().getInputStream());
       while(sc3.hasNextLine()) {
         String line = sc3.nextLine().trim();
         
         if(line.contains("GenBank assembly accession: </dt><dd>")) {
           assembly = line.split("GenBank assembly accession: </dt><dd>")[1].split(" ")[0].trim();
-        }
-        if(line.contains("href=\"/genome/?term=txid")) {
-          txid = line.split("href=\"/genome/\\?term=txid")[1].split("\\[")[0].trim();
+			break;
         }
       }
+		if(sc3 != null) sc3.close();
+		URL url4 = new URL("https://www.ncbi.nlm.nih.gov/assembly/"+URLEncoder.encode(assembly,"UTF-8"));
+		sc3 = new Scanner(url4.openConnection().getInputStream());
+		while(sc3.hasNextLine()) {
+			String line = sc3.nextLine().trim();
+
+			if(line.contains("href=\"/genome/?term=txid")) {
+				txid = line.split("href=\"/genome/\\?term=txid")[1].split("\\[")[0].trim();
+				break;
+			}
+		}
     } catch (MalformedURLException e) {
       o.println("ERROR: Species search makes invalid URL!");
       
@@ -266,11 +278,12 @@ public class CrossSpeciesGeneFinder {
       String geneName = null;
       Scanner sc1 = null;
       try {
-        URL url1 = new URL("http://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&sendto=on&log$=seqview&db=protein&dopt=fasta&sort=&val="+URLEncoder.encode(geneQuery, "UTF-8")+"&from=begin&to=end&maxplex=1");
-        sc1 = new Scanner(url1.openStream());
+		  // https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&save=file&log$=seqview&db=nuccore&report=fasta&sort=&id=283973264&from=500&to=1000&maxplex=1
+        URL url1 = new URL("https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&sendto=on&log$=seqview&db=nuccore&dopt=fasta&sort=&val="+URLEncoder.encode(geneQuery, "UTF-8")+"&from=begin&to=end&maxplex=1");
+		  sc1 = new Scanner(url1.openConnection().getInputStream());
         sc1.useDelimiter("\0");
         aminoSeq = sc1.next().trim();
-        geneName = aminoSeq.split("\n")[0].split("\\|")[4].trim();
+        geneName = aminoSeq.split("\n")[0].split(" ",2)[1].trim();
         o.println("Gene name: "+ geneName);
         wInfo.flush();
         wInfo.println("NCBI Gene Query Used: " + geneQuery + " - " + geneName);
@@ -393,8 +406,8 @@ public class CrossSpeciesGeneFinder {
       Scanner sc6 = null;
       try {
         o.print("Searching for results in genome of " + species + " (TXID " + txid + ")...");
-        URL url6 = new URL("http://blast.ncbi.nlm.nih.gov/Blast.cgi?RESULTS_FILE=on&RID="+tblastnRID+"&FORMAT_TYPE=Text&FORMAT_OBJECT=Alignment&ALIGNMENT_VIEW=Tabular&CMD=Get");
-        sc6 = new Scanner(url6.openStream());
+        URL url6 = new URL("https://blast.ncbi.nlm.nih.gov/Blast.cgi?RESULTS_FILE=on&RID="+tblastnRID+"&FORMAT_TYPE=Text&FORMAT_OBJECT=Alignment&ALIGNMENT_VIEW=Tabular&CMD=Get");
+        sc6 = new Scanner(url6.openConnection().getInputStream());
         
         while(sc6.hasNextLine()) {
           String line = sc6.nextLine().trim();
@@ -406,8 +419,8 @@ public class CrossSpeciesGeneFinder {
           String description = mapIDToDescription.get(someKindaID);
           if(description == null) {
             // Find description of organism, because not in text file
-            URL url7 = new URL("http://www.ncbi.nlm.nih.gov/nucleotide/" + someKindaID);
-            Scanner sc7 = new Scanner(url7.openStream());
+            URL url7 = new URL("https://www.ncbi.nlm.nih.gov/nucleotide/" + someKindaID);
+            Scanner sc7 = new Scanner(url7.openConnection().getInputStream());
             while(sc7.hasNextLine()) {
               String line2 = sc7.nextLine().trim();
               if(line2.contains("?ORGANISM=")) {
@@ -537,8 +550,8 @@ public class CrossSpeciesGeneFinder {
         wInfo.println("Match evalue: " + evalue);
         String strFASTA = null;
         try {
-          URL urlFASTA = new URL("http://www.ncbi.nlm.nih.gov/projects/sviewer/sequence.cgi?id="+currID+"&format=fasta&ranges=" + (currStart - 1) + "-" + (currEnd - 1));
-          Scanner sc8 = new Scanner(urlFASTA.openStream());
+          URL urlFASTA = new URL("https://www.ncbi.nlm.nih.gov/projects/sviewer/sequence.cgi?id="+currID+"&format=fasta&ranges=" + (currStart - 1) + "-" + (currEnd - 1));
+          Scanner sc8 = new Scanner(urlFASTA.openConnection().getInputStream());
           sc8.useDelimiter("\0");
           strFASTA = sc8.next().trim();
           sc8.close();
@@ -603,7 +616,7 @@ public class CrossSpeciesGeneFinder {
           String blastxQuery = "CMD=Put&QUERY="+URLEncoder.encode(strFASTA, "UTF-8")+"&PROGRAM=blastx&SERVICE=plain&DATABASE=nr";
           blastxRID = doBlastAndGetRID(blastxQuery,wInfo);
           wInfo.flush();
-          wInfo.println("BLASTX Results Link: http://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Get&RID="+blastxRID);
+          wInfo.println("BLASTX Results Link: https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Get&RID="+blastxRID);
         } catch (UnsupportedEncodingException e) {
           o.println("ERROR: Failed to URL-encode BLASTX query!");
           if(!errorList.contains(geneQuery)) {
@@ -729,7 +742,7 @@ public class CrossSpeciesGeneFinder {
     String blastRID = "";
     int i = 0;
     do { // no retry if blastx
-      InputStream postStream = doPost("http://www.ncbi.nlm.nih.gov/blast/Blast.cgi",query);
+      InputStream postStream = doPost("https://www.ncbi.nlm.nih.gov/blast/Blast.cgi",query);
       Scanner sc4 = new Scanner(postStream);
       blastRID = "";
       while(sc4.hasNextLine()) {
@@ -742,22 +755,18 @@ public class CrossSpeciesGeneFinder {
       o.println("Query RID is " + blastRID);
       
       String blastStatus = "WAITING";
-      URL url5 = new URL("http://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Get&NOHEADER=true&RID="+blastRID);
+      URL url5 = new URL("https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Get&NOHEADER=true&RID="+blastRID);
       o.print("Waiting for results");
       int totalSlept = 0;
       while(blastStatus.equals("WAITING")) {
-        Scanner sc5 = new Scanner(url5.openStream());
+        Scanner sc5 = new Scanner(url5.openConnection().getInputStream());
         while(sc5.hasNextLine()) {
           String line = sc5.nextLine().trim();
           if(line.startsWith("Status=")) {
             blastStatus = line.split("=")[1].trim();
-            // it gets here and then stops working
-            //o.println("[DEBUG] blastStatus " + blastStatus);
             if(blastStatus.equals("READY")) {
               o.println(" Finished!");
               sc5.close();
-              o.println("Waiting 15 seconds to be nice to NCBI's server...");
-              mySleep(15000);
               return blastRID;
             }
             if(blastStatus.equals("FAILED")) {
@@ -765,8 +774,8 @@ public class CrossSpeciesGeneFinder {
               wInfo.println("*** BLAST SERVER SAID FAILED! ***");
               wInfo.flush();
               sc5.close();
-              o.println("Waiting 30 seconds to be nice to NCBI's server...");
-              mySleep(30000);
+				o.println("Waiting 30 seconds to be nice to NCBI's server...");
+				mySleep(30000);
               return "";
             }
           }
@@ -777,8 +786,8 @@ public class CrossSpeciesGeneFinder {
             totalSlept += time;
             if((!blastx && totalSlept > 300000) || (blastx && totalSlept > 900000)) { // 5 min or 15 if blastx
               o.println(" ERROR!\nBLAST server seems to have hung. Canceling query, waiting 30 sec and retrying. (Try "+(i+1)+"/5)");
-              URL urlCancel = new URL("http://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Cancel&RID="+blastRID);
-              Scanner sc5a = new Scanner(urlCancel.openStream());
+              URL urlCancel = new URL("https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Cancel&RID="+blastRID);
+              Scanner sc5a = new Scanner(urlCancel.openConnection().getInputStream());
               sc5a.nextLine(); // just read something
               sc5a.close();
               mySleep(30000);
@@ -808,7 +817,7 @@ public class CrossSpeciesGeneFinder {
       DataLine.Info info;
       Clip clip;
       
-      stream = AudioSystem.getAudioInputStream(wavStream);
+      stream = AudioSystem.getAudioInputStream(new BufferedInputStream(wavStream));
       format = stream.getFormat();
       info = new DataLine.Info(Clip.class, format);
       clip = (Clip) AudioSystem.getLine(info);
