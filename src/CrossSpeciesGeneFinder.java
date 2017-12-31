@@ -2,6 +2,7 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 import java.awt.*;
+import java.awt.event.*;
 import javax.swing.*;
 import java.security.CodeSource;
 
@@ -18,12 +19,25 @@ public class CrossSpeciesGeneFinder {
 			// oh well.
 		}
 		
-		JTextArea textArea = new JTextArea (25, 80);
+		JTextArea textArea = new JTextArea (24, 80);
+		
+		textArea.setFont(new Font("monospaced", Font.PLAIN, 12));
 		
 		textArea.setEditable (false);
 		
 		JFrame frame = new JFrame ("Cross-Species Gene Finder");
-		frame.setDefaultCloseOperation (JFrame.EXIT_ON_CLOSE); // fixme: warn?
+		frame.setDefaultCloseOperation (JFrame.DO_NOTHING_ON_CLOSE);
+		
+		frame.addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+				if(JOptionPane.showConfirmDialog(frame, "Are you sure you want to quit? The search process will be stopped.",
+												"Confirm",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE ) == JOptionPane.OK_OPTION){
+					System.exit(0);
+				}
+			}
+		});
+
+		
 		Container contentPane = frame.getContentPane ();
 		contentPane.setLayout (new BorderLayout ());
 		contentPane.add (
@@ -49,7 +63,7 @@ public class CrossSpeciesGeneFinder {
 		o.println("Cross-Species Gene Finder for NCBI\nBy Ethan Nelson-Moore, (C) "+Calendar.getInstance().get(Calendar.YEAR));
 		o.println("It will play a \"ta-da!\" sound when it's done, or an error sound if there are any errors.\n");
 		ArrayList<String> queryList = new ArrayList<String>();
-		int option = JOptionPane.showConfirmDialog(null, "Do you want to use batch mode?", "Batch Mode", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+		int option = JOptionPane.showConfirmDialog(null, "Do you want to use batch mode?\n\nPress Cancel to quit.", "CSGF Mode Selection", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
 		if (option == JOptionPane.YES_OPTION) { // batch
 			batch = true;
 			o.print("Using batch mode. ");
@@ -663,8 +677,8 @@ public class CrossSpeciesGeneFinder {
 		} else {
 			Audio.playWav("resources/tada.wav");
 		}
-		o.println("All done, yay!");
-		int option2 = JOptionPane.showConfirmDialog(null, "Do you want to open the results folder?", "CSGF", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+		o.println("All done!");
+		int option2 = JOptionPane.showConfirmDialog(null, "All done! Do you want to open the results folder?", "CSGF Finished", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
 		if (option2 == JOptionPane.YES_OPTION) {
 			try {
 				Desktop.getDesktop().open(new File("Results/"));
