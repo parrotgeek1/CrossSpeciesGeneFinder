@@ -1,3 +1,9 @@
+/*
+This isn't the best code I've ever written. I wrote it in high school, when I had just learned Java.
+If I had written it now, I would have made the error handling a LOT less redundant, and used better variable names.
+If I have time in the future I'll try to improve the code style.
+*/
+
 import java.net.*;
 import java.io.*;
 import java.util.*;
