@@ -394,8 +394,8 @@ public class CrossSpeciesGeneFinder {
 					if(line.startsWith("#")) continue;
 					if(line.equals("")) continue;
 					boolean isRightSpecies = true;
-					// # Fields: query id, subject ids, % identity, % positives, query/sbjct frames, alignment length, mismatches, gap opens, q. start, q. end, s. start, s. end, evalue, bit score
-					String someKindaID = line.split("\t")[1].split("\\|")[1];
+                                    //NEW: # Fields: query acc.ver, subject acc.ver, % identity, alignment length, mismatches, gap opens, q. start, q. end, s. start, s. end, evalue, bit score, % positives, query/sbjct frames
+                                        String someKindaID = line.split("\t")[1];
 					String description = mapIDToDescription.get(someKindaID);
 					if(description == null) {
 						// Find description of organism, because not in text file
@@ -423,13 +423,14 @@ public class CrossSpeciesGeneFinder {
 								mapLengthForEachID.put(someKindaID,size);
 							}
 						}
+                                                o.print(".");
 						sc7.close();
 					}
 					if(description.equals("")) isRightSpecies = false;
 					if(isRightSpecies){
-						long subjectStart = Long.parseLong(line.split("\t")[10]);
-						long subjectEnd = Long.parseLong(line.split("\t")[11]);
-						double evalue = Double.parseDouble(line.split("\t")[12]);
+						long subjectStart = Long.parseLong(line.split("\t")[8]);
+						long subjectEnd = Long.parseLong(line.split("\t")[9]);
+						double evalue = Double.parseDouble(line.split("\t")[10]);
 						
 						if(evalue <= maxEvalue) {
 							if((mapEvalueForEachID.containsKey(someKindaID) && mapEvalueForEachID.get(someKindaID) < evalue) || (!mapEvalueForEachID.containsKey(someKindaID))) {
