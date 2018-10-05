@@ -1,7 +1,6 @@
 /*
 This isn't the best code I've ever written. I wrote it in high school, when I had just learned Java.
-If I had written it now, I would have made the error handling a LOT less redundant, and used better variable names.
-If I have time in the future I'll try to improve the code style.
+If I had written it now, I would have used better variable names.
 */
 
 import java.net.*;
@@ -15,20 +14,35 @@ import java.security.CodeSource;
 public class CrossSpeciesGeneFinder {
 	
 	static PrintStream o = null;
+    static PrintWriter wInfo = null;
+    static ArrayList<String> errorList = new ArrayList<String>();
+
+    private static void printlnFlush(String s) {
+        if(wInfo != null) {
+            wInfo.println(s);
+            wInfo.flush();
+        }
+    }
+
+    private static void fail(String geneQuery, String msg) {
+        msg = "ERROR: "+msg;
+        if(o != null) o.println(msg);
+        if(!errorList.contains(geneQuery)) {
+            errorList.add(geneQuery);
+        }
+        printlnFlush("*** "+msg.toUpperCase()+" ***");
+        wInfo.close();
+    }
 
 	public static void main(String[] args){
 		try {
-			// Set System L&F
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			// oh well.
 		}
 		
 		JTextArea textArea = new JTextArea (24, 80);
-		
 		textArea.setFont(new Font("monospaced", Font.PLAIN, 12));
-		
 		textArea.setEditable (false);
 		
 		JFrame frame = new JFrame ("Cross-Species Gene Finder");
@@ -43,15 +57,9 @@ public class CrossSpeciesGeneFinder {
 			}
 		});
 
-		
 		Container contentPane = frame.getContentPane ();
 		contentPane.setLayout (new BorderLayout ());
-		contentPane.add (
-						 new JScrollPane (
-										  textArea,
-										  JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-										  JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED),
-						 BorderLayout.CENTER);
+		contentPane.add (new JScrollPane (textArea,JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED),BorderLayout.CENTER);
 		frame.pack ();
 		frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH); // maximize
 		frame.setVisible (true);
@@ -171,7 +179,6 @@ public class CrossSpeciesGeneFinder {
 		String assembly = "";
 		String txid = "";
 		String niceTitle = "";
-		ArrayList<String> errorList = new ArrayList<String>();
 		try {
 			URL url2 = new URL("https://www.ncbi.nlm.nih.gov/genome/?term="+URLEncoder.encode(species, "UTF-8"));
 			sc2 = new Scanner(url2.openConnection().getInputStream());
@@ -208,19 +215,15 @@ public class CrossSpeciesGeneFinder {
 			}
 		} catch (MalformedURLException e) {
 			o.println("ERROR: Species search makes invalid URL!");
-			
 			return;
 		} catch (UnsupportedEncodingException e) {
 			o.println("ERROR: Failed to URL-encode species name!");
-			
 			return;
 		} catch (IOException e) {
 			o.println("ERROR: Failed to load species info!");
-			
 			return;
 		} catch (ArrayIndexOutOfBoundsException e) {
 			o.println("ERROR: Species not found in NCBI database! (or they changed their HTML)");
-			
 			return;
 		} catch (NullPointerException e) {
 			o.println("ERROR: NPE (you shouldn't see this)");
@@ -232,27 +235,22 @@ public class CrossSpeciesGeneFinder {
 		String dbname1 = "genomic/" + txid + "/" + assembly;
 		o.println("Got database name: " + dbname1);
 		for(String geneQuery : queryList) {
-			PrintWriter wInfo = null;
 			try {
 				new File("Results/"+species+"/"+geneQuery).mkdirs();
 				wInfo = new PrintWriter("Results/"+species+"/"+geneQuery+"/Info.txt", "UTF-8");
 			} catch (UnsupportedEncodingException e) {
 				o.println("ERROR: Failed to create results file!");
 				continue;
-			}
-			catch(IOException e) {
+			} catch(IOException e) {
 				o.println("ERROR: Failed to create or write to results file or folder!");
-				
 				continue;
-			}catch (NullPointerException e) {
+			} catch (NullPointerException e) {
 				o.println("ERROR: NPE (you shouldn't see this)");
 				continue;
 			}
-			
-			wInfo.flush();
-			wInfo.println("Searching in Species Genome: " + niceTitle);
-			wInfo.flush();
-			wInfo.println("Maximum evalue: " + maxEvalue);
+
+			printlnFlush("Searching in Species Genome: " + niceTitle);
+			printlnFlush("Maximum evalue: " + maxEvalue);
 			
 			String aminoSeq = null;
 			String geneName = null;
@@ -265,56 +263,21 @@ public class CrossSpeciesGeneFinder {
 				aminoSeq = sc1.next().trim();
 				geneName = aminoSeq.split("\n")[0].split(" ",2)[1].trim();
 				o.println("Gene name: "+ geneName);
-				wInfo.flush();
-				wInfo.println("NCBI Gene Query Used: " + geneQuery + " - " + geneName);
+                printlnFlush("NCBI Gene Query Used: " + geneQuery + " - " + geneName);
 			} catch (MalformedURLException e) {
-				o.println("ERROR: Gene query makes invalid URL!");
-				if(!errorList.contains(geneQuery)) {
-					errorList.add(geneQuery);
-				}
-				wInfo.flush();
-				wInfo.println("*** ERROR: INVALID GENE QUERY! ***");
-				wInfo.close();
-				
+				fail(geneQuery,"Gene query makes invalid URL!");
 				continue;
 			} catch (NullPointerException e) {
-				o.println("ERROR: NPE (you shouldn't see this)");
-				if(!errorList.contains(geneQuery)) {
-					errorList.add(geneQuery);
-				}
-				wInfo.flush();
-				wInfo.println("*** ERROR: NPE (you shouldn't see this) ***");
-				wInfo.close();
+				fail(geneQuery,"NPE (you shouldn't see this)");
 				continue;
 			} catch (UnsupportedEncodingException e) {
-				o.println("ERROR: Failed to URL-encode gene query!");
-				if(!errorList.contains(geneQuery)) {
-					errorList.add(geneQuery);
-				}
-				wInfo.flush();
-				wInfo.println("*** ERROR: INVALID GENE QUERY! ***");
-				wInfo.close();
-				
-				continue;
+				fail(geneQuery,"Failed to URL-encode gene query!");
+                continue;
 			} catch (IOException e) {
-				o.println("ERROR: Failed to load gene query info!");
-				if(!errorList.contains(geneQuery)) {
-					errorList.add(geneQuery);
-				}
-				wInfo.flush();
-				wInfo.println("*** ERROR: FAILED TO LOAD GENE QUERY INFO! ***");
-				wInfo.close();
-				
-				continue;
+				fail(geneQuery,"Failed to load gene query info!");
+                continue;
 			} catch (ArrayIndexOutOfBoundsException e) {
-				o.println("ERROR: Gene query not found in NCBI database! (or they changed their HTML)");
-				if(!errorList.contains(geneQuery)) {
-					errorList.add(geneQuery);
-				}
-				wInfo.flush();
-				wInfo.println("*** ERROR: GENE QUERY NOT FOUND! ***");
-				wInfo.close();
-				
+				fail(geneQuery,"Gene query not found in NCBI database! (or they changed their HTML)");
 				continue;
 			} finally {
 				if(sc1 != null) sc1.close();
@@ -325,56 +288,21 @@ public class CrossSpeciesGeneFinder {
 				String tblastnQuery = "CMD=Put&QUERY="+URLEncoder.encode(aminoSeq, "UTF-8")+"&BLAST_SPEC=Assembly&PROGRAM=tblastn&SERVICE=plain&DATABASE="+URLEncoder.encode(dbname1, "UTF-8");
 				tblastnRID = doBlastAndGetRID(tblastnQuery,wInfo);
 			} catch (UnsupportedEncodingException e) {
-				o.println("ERROR: Failed to URL-encode TBLASTN query!");
-				if(!errorList.contains(geneQuery)) {
-					errorList.add(geneQuery);
-				}
-				wInfo.flush();
-				wInfo.println("*** ERROR: INVALID TBLASTN URL! ***");
-				wInfo.close();
-				
+				fail(geneQuery,"Failed to URL-encode TBLASTN query!");
 				continue;
 			} catch (ArrayIndexOutOfBoundsException e) {
-				o.println("ERROR: Invalid TBLASTN query (or they changed their HTML)");
-				if(!errorList.contains(geneQuery)) {
-					errorList.add(geneQuery);
-				}
-				wInfo.flush();
-				wInfo.println("*** ERROR: INVALID TBLASTN QUERY! ***");
-				wInfo.close();
-				
+				fail(geneQuery,"Invalid TBLASTN query (or they changed their HTML)");
 				continue;
 			}
 			catch(IOException e) {
-				o.println("ERROR: Failed to upload TBLASTN query!");
-				if(!errorList.contains(geneQuery)) {
-					errorList.add(geneQuery);
-				}
-				wInfo.flush();
-				wInfo.println("*** ERROR: FAILED TO UPLOAD TBLASTN QUERY! ***");
-				wInfo.close();
-				
+				fail(geneQuery,"Failed to upload TBLASTN query!");
 				continue;
-				
 			} catch (NullPointerException e) {
-				o.println("ERROR: NPE (you shouldn't see this)");
-				if(!errorList.contains(geneQuery)) {
-					errorList.add(geneQuery);
-				}
-				wInfo.flush();
-				wInfo.println("*** ERROR: NPE (you shouldn't see this) ***");
-				
+				fail(geneQuery,"NPE (you shouldn't see this)");
 				continue;
 			}
 			if(tblastnRID.equals("")) {
-				o.println("ERROR: Invalid TBLASTN result (or they changed their HTML)");
-				if(!errorList.contains(geneQuery)) {
-					errorList.add(geneQuery);
-				}
-				wInfo.flush();
-				wInfo.println("*** ERROR: INVALID TBLASTN RESULT! ***");
-				wInfo.close();
-				
+				fail(geneQuery,"Invalid TBLASTN result (or they changed their HTML)");
 				continue;
 			}
 			
@@ -423,7 +351,7 @@ public class CrossSpeciesGeneFinder {
 								mapLengthForEachID.put(someKindaID,size);
 							}
 						}
-                                                o.print(".");
+                        o.print(".");
 						sc7.close();
 					}
 					if(description.equals("")) isRightSpecies = false;
@@ -444,59 +372,25 @@ public class CrossSpeciesGeneFinder {
 				sc6.close();
 				o.println(" Finished!");
 			} catch (MalformedURLException e) {
-				o.println("ERROR: Gene search makes invalid URL!");
-				if(!errorList.contains(geneQuery)) {
-					errorList.add(geneQuery);
-				}
-				wInfo.flush();
-				wInfo.println("*** ERROR: INVALID GENE NAME! ***");
-				
-				
+				fail(geneQuery,"Gene search makes invalid URL!");
 				continue;
 			} catch (UnsupportedEncodingException e) {
-				o.println("ERROR: Failed to URL-encode gene name!");
-				if(!errorList.contains(geneQuery)) {
-					errorList.add(geneQuery);
-				}
-				wInfo.flush();
-				wInfo.println("*** ERROR: INVALID GENE NAME! ***");
-				
-				
+				fail(geneQuery,"Failed to URL-encode gene name!");
 				continue;
 			} catch (IOException e) {
-				o.println("ERROR: Failed to load gene info!");
-				if(!errorList.contains(geneQuery)) {
-					errorList.add(geneQuery);
-				}
-				wInfo.flush();
-				wInfo.println("*** ERROR: FAILED TO LOAD GENE INFO! ***");
-				
-				
+				fail(geneQuery,"Failed to load gene info!");
 				continue;
 			} catch (ArrayIndexOutOfBoundsException e) {
-				o.println("ERROR: Gene description not found in NCBI database! (or they changed their HTML)");
-				if(!errorList.contains(geneQuery)) {
-					errorList.add(geneQuery);
-				}
-				wInfo.flush();
-				wInfo.println("*** ERROR: GENE NOT FOUND! ***");
-				
-				
+				fail(geneQuery,"Gene description not found in NCBI database! (or they changed their HTML)");
 				continue;
 			} catch (NullPointerException e) {
-				o.println("ERROR: NPE (you shouldn't see this)");
-				if(!errorList.contains(geneQuery)) {
-					errorList.add(geneQuery);
-				}
-				wInfo.flush();
-				wInfo.println("*** ERROR: NPE (you shouldn't see this) ***");
-				
+				fail(geneQuery,"NPE (you shouldn't see this)");
 				continue;
 			} finally {
 				if(sc6 != null) sc6.close();
 			}
-			wInfo.flush();
-			wInfo.println("");
+
+			printlnFlush("");
 			mapEvalueForEachID = ValueComparator.sortByValue(mapEvalueForEachID);
 			int doneGenes = 1;
 			for (String currID : mapEvalueForEachID.keySet()) {
@@ -507,12 +401,9 @@ public class CrossSpeciesGeneFinder {
 				long currStart = mapLowestForEachID.get(currID);
 				long currEnd = mapHighestForEachID.get(currID);
 				long currLen = mapLengthForEachID.get(currID);
-				wInfo.flush();
-				wInfo.println("TBLASTN Match Name: " + currDesc);
-				wInfo.flush();
-				wInfo.println("NCBI ID: " + currID);
-				wInfo.flush();
-				wInfo.println("True Match Range (unpadded): " + currStart + "-" + currEnd);
+                printlnFlush("TBLASTN Match Name: " + currDesc);
+                printlnFlush("NCBI ID: " + currID);
+                printlnFlush("True Match Range (unpadded): " + currStart + "-" + currEnd);
 				// Add buffer on either side, if possible
 				if((currStart - bufferLeft) < 1) {
 					currStart = 1;
@@ -525,10 +416,8 @@ public class CrossSpeciesGeneFinder {
 					currEnd += bufferRight;
 				}
 				o.println("Downloading FASTA for ID " + currID + ": " + currDesc +" {" + currStart + "-" + currEnd+"}, evalue " + evalue);
-				wInfo.flush();
-				wInfo.println("FASTA File Range (padded by "+buffStr+" bases): " + currStart + "-" + currEnd);
-				wInfo.flush();
-				wInfo.println("Match evalue: " + evalue);
+                printlnFlush("FASTA File Range (padded by "+buffStr+" bases): " + currStart + "-" + currEnd);
+                printlnFlush("Match evalue: " + evalue);
 				String strFASTA = null;
 				try {
 					URL urlFASTA = new URL("https://www.ncbi.nlm.nih.gov/projects/sviewer/sequence.cgi?id="+currID+"&format=fasta&ranges=" + (currStart - 1) + "-" + (currEnd - 1));
@@ -537,58 +426,24 @@ public class CrossSpeciesGeneFinder {
 					strFASTA = sc8.next().trim();
 					sc8.close();
 				} catch (MalformedURLException e) {
-					o.println("ERROR: FASTA download makes invalid URL!");
-					if(!errorList.contains(geneQuery)) {
-						errorList.add(geneQuery);
-					}
-					wInfo.flush();
-					wInfo.println("*** ERROR: INVALID FASTA URL! ***");
-					
-					
+					fail(geneQuery,"FASTA download makes invalid URL!");
 					continue;
 				}  catch (NullPointerException e) {
-					o.println("ERROR: NPE (you shouldn't see this)");
-					if(!errorList.contains(geneQuery)) {
-						errorList.add(geneQuery);
-					}
-					wInfo.flush();
-					wInfo.println("*** ERROR: NPE (you shouldn't see this) ***");
-					
+					fail(geneQuery,"NPE (you shouldn't see this)");
 					continue;
 				}
 				catch (IOException e) {
-					o.println("ERROR: Failed to download FASTA!");
-					if(!errorList.contains(geneQuery)) {
-						errorList.add(geneQuery);
-					}
-					wInfo.flush();
-					wInfo.println("*** ERROR: FAILED TO DOWNLOAD FASTA! ***");
-					
-					
+					fail(geneQuery,"Failed to download FASTA!");
 					continue;
 				}
 				if(strFASTA == null || strFASTA.equals("")) {
-					o.println("ERROR: Failed to download FASTA!");
-					if(!errorList.contains(geneQuery)) {
-						errorList.add(geneQuery);
-					}
-					wInfo.flush();
-					wInfo.println("*** ERROR: FAILED TO DOWNLOAD FASTA! ***");
-					
-					
+					fail(geneQuery,"Failed to download FASTA!");
 					continue;
 				}
 				try {
-					saveTextFile(strFASTA,"Results/"+species+"/"+geneQuery+"/FASTA_ID" + currID + "_" + currStart + "-" + currEnd + ".fa");
+					Utils.saveTextFile(strFASTA,"Results/"+species+"/"+geneQuery+"/FASTA_ID" + currID + "_" + currStart + "-" + currEnd + ".fa");
 				} catch (IOException e) {
-					o.println("ERROR: Failed to save FASTA file!");
-					if(!errorList.contains(geneQuery)) {
-						errorList.add(geneQuery);
-					}
-					wInfo.flush();
-					wInfo.println("*** ERROR: FAILED TO SAVE FASTA FILE! ***");
-					
-					
+					fail(geneQuery,"Failed to save FASTA file!");
 					continue;
 				}
 				o.print("Starting BLASTX to verify results... ");
@@ -596,64 +451,30 @@ public class CrossSpeciesGeneFinder {
 				try {
 					String blastxQuery = "CMD=Put&QUERY="+URLEncoder.encode(strFASTA, "UTF-8")+"&PROGRAM=blastx&SERVICE=plain&DATABASE=nr";
 					blastxRID = doBlastAndGetRID(blastxQuery,wInfo);
-					wInfo.flush();
-					wInfo.println("BLASTX Results Link: https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Get&RID="+blastxRID);
+                    printlnFlush("BLASTX Results Link: https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Get&RID="+blastxRID);
 				} catch (UnsupportedEncodingException e) {
-					o.println("ERROR: Failed to URL-encode BLASTX query!");
-					if(!errorList.contains(geneQuery)) {
-						errorList.add(geneQuery);
-					}
-					wInfo.flush();
-					wInfo.println("*** ERROR: INVALID BLASTX URL! ***");
-					
+					fail(geneQuery,"Failed to URL-encode BLASTX query!");
 					continue;
 				} catch (ArrayIndexOutOfBoundsException e) {
-					o.println("ERROR: Invalid BLASTX query (or they changed their HTML)");
-					if(!errorList.contains(geneQuery)) {
-						errorList.add(geneQuery);
-					}
-					wInfo.flush();
-					wInfo.println("*** ERROR: INVALID BLASTX QUERY! ***");
-					
-					
+					fail(geneQuery,"Invalid BLASTX query (or they changed their HTML)");
 					continue;
 				}
 				catch(IOException e) {
-					o.println("ERROR: Failed to upload BLASTX query!");
-					if(!errorList.contains(geneQuery)) {
-						errorList.add(geneQuery);
-					}
-					wInfo.flush();
-					wInfo.println("*** ERROR: FAILED TO UPLOAD BLASTX QUERY! ***");
-					
+					fail(geneQuery,"Failed to upload BLASTX query!");
 					continue;
 				}
 				catch (NullPointerException e) {
-					o.println("ERROR: NPE (you shouldn't see this)");
-					if(!errorList.contains(geneQuery)) {
-						errorList.add(geneQuery);
-					}
-					wInfo.flush();
-					wInfo.println("*** ERROR: NPE (you shouldn't see this) ***");
-					
+					fail(geneQuery,"NPE (you shouldn't see this)");
 					continue;
 				}
 				if(blastxRID.equals("")) {
-					o.println("ERROR: Invalid BLASTX result (or they changed their HTML)");
-					if(!errorList.contains(geneQuery)) {
-						errorList.add(geneQuery);
-					}
-					wInfo.flush();
-					wInfo.println("*** ERROR: INVALID BLASTX RESULT! ***");
-					
-					continue;
-				}
-				wInfo.flush();
-				wInfo.println("");
-				
+					fail(geneQuery,"Invalid BLASTX result (or they changed their HTML)");
+                    continue;
+                }
+                printlnFlush("");
 			}
-			wInfo.println("");
-			wInfo.println("[QUERY COMPLETE AT DATE: "+new Date().toString()+"]");
+			printlnFlush("");
+			printlnFlush("[QUERY COMPLETE AT DATE: "+new Date().toString()+"]");
 			wInfo.close();
 			o.println("");
 		}
@@ -665,7 +486,7 @@ public class CrossSpeciesGeneFinder {
 				for(String s : errorList) {
 					joinedStr+=s+l;
 				}
-				saveTextFile("Total Number of Errors: " + errorList.size() + l + "Date: " + dt+l+l+joinedStr, "Results/"+species+"/ErrorList_"+dt+".txt");
+				Utils.saveTextFile("Total Number of Errors: " + errorList.size() + l + "Date: " + dt+l+l+joinedStr, "Results/"+species+"/ErrorList_"+dt+".txt");
 			} catch (IOException e) {
 				o.println("ERROR: Failed to save error list file!");
 				
@@ -679,7 +500,6 @@ public class CrossSpeciesGeneFinder {
 				o.print(s+" ");
 			}
 			o.println();
-			
 			Audio.playWav("resources/error.wav");
 		} else {
 			Audio.playWav("resources/tada.wav");
@@ -701,7 +521,7 @@ public class CrossSpeciesGeneFinder {
 		String blastRID = "";
 		int i = 0;
 		do { // no retry if blastx
-			InputStream postStream = WebUtils.doPost("https://www.ncbi.nlm.nih.gov/blast/Blast.cgi",query);
+			InputStream postStream = Utils.doPost("https://www.ncbi.nlm.nih.gov/blast/Blast.cgi",query);
 			Scanner sc4 = new Scanner(postStream);
 			blastRID = "";
 			while(sc4.hasNextLine()) {
@@ -730,8 +550,8 @@ public class CrossSpeciesGeneFinder {
 						}
 						if(blastStatus.equals("FAILED")) {
 							o.println(" BLAST Server Said Failed!");
-							wInfo.println("*** BLAST SERVER SAID FAILED! ***");
-							wInfo.flush();
+							printlnFlush("*** BLAST SERVER SAID FAILED! ***");
+
 							sc5.close();
 							o.println("Waiting 30 seconds to be nice to NCBI's server...");
 							MyTime.sleep(30000);
@@ -762,10 +582,5 @@ public class CrossSpeciesGeneFinder {
 			i++;
 		} while(i < 5 && !blastx);
 		return "";
-	}
-	private static void saveTextFile(String contents, String path) throws IOException {
-		PrintWriter out = new PrintWriter(new FileWriter(new File(path)));
-		out.println(contents);
-		out.close();
 	}
 }

@@ -1,7 +1,7 @@
 # Cross-Species Gene Finder
 Open source, cross-platform tool to search for similar genes across species using the NCBI database. Used in [this research project](https://github.com/parrotgeek1/CrossSpeciesGeneFinder/raw/master/TvedteGradRetreatPosterSp16.pdf) by Eric Tvedte at the University of Iowa.
 
-# Verified to be working with NCBI's API as of 2018-05-26. Please create an issue to notify me if it stops working.
+# Verified to be working with NCBI's API as of 2018-10-05. Please create an issue to notify me if it stops working.
 
 # [Download (.jar)](https://github.com/parrotgeek1/CrossSpeciesGeneFinder/raw/master/CSGF.jar)
 Double-click CSGF.jar to start. You will be given instructions. Java is required.

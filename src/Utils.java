@@ -1,7 +1,7 @@
 import java.net.*;
 import java.io.*;
 
-public class WebUtils {
+public class Utils {
 	// HTTP POST request
 	public static InputStream doPost(String url, String query) throws MalformedURLException{
 		try {
@@ -23,4 +23,10 @@ public class WebUtils {
 			return null;
 		}
 	}
+
+    public static void saveTextFile(String contents, String path) throws IOException {
+        PrintWriter out = new PrintWriter(new FileWriter(new File(path)));
+        out.println(contents);
+        out.close();
+    }
 }
