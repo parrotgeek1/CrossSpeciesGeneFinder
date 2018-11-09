@@ -20,7 +20,7 @@ The first line of the file starts with:
 !CSGFBatchV1
 ```
 
-This identifier can also be followed by a colon and several extra fields to predefine search parameters. The current possibiliites are as follows:
+This identifier can also be followed by a colon and several extra fields to predefine search parameters. The current possibilities are as follows:
 
 * A species name, a colon, and a maximum e value: 
 
@@ -49,5 +49,5 @@ To Do
 
 * add NOT specifying max e value or species on batch file
 * can pause and resume?
-* expire date show for results
+* show expiration date for results
 * more code cleanup
