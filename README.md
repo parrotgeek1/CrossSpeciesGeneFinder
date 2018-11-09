@@ -3,7 +3,7 @@ Open source Java tool which searches for similar genes across species using the 
 
 Used in [this research project](https://github.com/parrotgeek1/CrossSpeciesGeneFinder/raw/master/TvedteGradRetreatPosterSp16.pdf) by Eric Tvedte at the University of Iowa.
 
-# Verified to be working with NCBI's API as of 2018-10-05. Please create an issue to notify me if it stops working.
+# Verified to be working with NCBI's API as of 2018-11-08. Please create an issue to notify me if it stops working.
 
 # [Download (.jar)](https://github.com/parrotgeek1/CrossSpeciesGeneFinder/raw/master/CSGF.jar)
 Double-click CSGF.jar to start. You will be given instructions. Java is required.
@@ -20,12 +20,12 @@ The first line of the file starts with:
 !CSGFBatchV1
 ```
 
-After the colon, you can put either:
+This identifier can also be followed by a colon and several extra fields to predefine search parameters. The current possibiliites are as follows:
 
 * A species name, a colon, and a maximum e value: 
 
         !CSGFBatchV1:Nasonia giraulti:1e-30
-
+        
 * A species name, a colon, a maximum e value, and a custom buffer size on both sides of the gene: 
 
         !CSGFBatchV1:Nasonia giraulti:1e-30:2000
@@ -34,7 +34,7 @@ After the colon, you can put either:
 
         !CSGFBatchV1:Nasonia giraulti:1e-30:2000,3000
 
-The default buffer size is 1000 bases on both sides, if unspecified.
+Any input parameters not given will be prompted for at the start of the program, except for the default buffer size, which is 1000 bases on both sides if unspecified.
 
 Extraneous spaces between colons and commas, or at the END of the line, will be ignored. The file must start with EXACTLY !CSGFBatchV1 in that capitalization, with no extra spaces.
 
