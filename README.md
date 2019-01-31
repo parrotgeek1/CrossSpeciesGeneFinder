@@ -3,6 +3,8 @@ Open source Java tool which searches for similar genes across species using the 
 
 Used in [this research project](https://github.com/parrotgeek1/CrossSpeciesGeneFinder/raw/master/TvedteGradRetreatPosterSp16.pdf) by Eric Tvedte at the University of Iowa.
 
+The resulting research paper is here: https://academic.oup.com/jhered/article/108/7/791/3978731
+
 # Verified to be working with NCBI's API as of 2018-11-08. Please create an issue to notify me if it stops working.
 
 # [Download (.jar)](https://github.com/parrotgeek1/CrossSpeciesGeneFinder/raw/master/CSGF.jar)
