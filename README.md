@@ -5,7 +5,7 @@ Used in [this research project](https://github.com/parrotgeek1/CrossSpeciesGeneF
 
 The resulting research paper is here: https://academic.oup.com/jhered/article/108/7/791/3978731
 
-# Verified to be working with NCBI's API as of 2018-11-08. Please create an issue to notify me if it stops working.
+# Verified to be working with NCBI's API as of 2019-02-06. Please create an issue to notify me if it stops working.
 
 # [Download (.jar)](https://github.com/parrotgeek1/CrossSpeciesGeneFinder/raw/master/CSGF.jar)
 Double-click CSGF.jar to start. You will be given instructions. Java is required.
