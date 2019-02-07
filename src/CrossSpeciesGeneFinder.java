@@ -101,7 +101,7 @@ public class CrossSpeciesGeneFinder {
                     }
                     while(scQL.hasNextLine()) {
                         String line = scQL.nextLine().trim();
-                        if(line.contains("#")) line = line.split("#")[0].trim();
+                        if(line.contains("#")) line = line.split("#",-1)[0].trim();
                         if(line.equals("")) continue;
                         queryList.add(line);
                     }
