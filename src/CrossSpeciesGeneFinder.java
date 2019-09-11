@@ -232,8 +232,7 @@ public class CrossSpeciesGeneFinder {
             if(sc2 != null) sc2.close();
             if(sc3 != null) sc3.close();
         }
-        String dbname1 = "genomic/" + txid + "/" + assembly;
-        o.println("Got database name: " + dbname1);
+        o.println("Got TXID " + txid);
         for(String geneQuery : queryList) {
             try {
                 new File("Results/"+species+"/"+geneQuery).mkdirs();
@@ -314,7 +313,8 @@ public class CrossSpeciesGeneFinder {
             try {
                 o.print("Starting TBLASTN... ");
                 // problem here
-                String tblastnQuery = "CMD=Put&QUERY="+URLEncoder.encode(aminoSeq, "UTF-8")+"&BLAST_SPEC=Assembly&PROGRAM=tblastn&FORMAT_TYPE=text&DATABASE="+URLEncoder.encode(dbname1, "UTF-8");
+                String tblastnQuery = "CMD=Put&QUERY="+URLEncoder.encode(aminoSeq, "UTF-8")+"&BLAST_SPEC=Assembly&PROGRAM=tblastn&FORMAT_TYPE=text&DATABASE=nr&EQ_MENU="+URLEncoder.encode(txid, "UTF-8");
+                System.err.println(tblastnQuery);
                 tblastnRID = doBlastAndGetRID(tblastnQuery,wInfo);
             } catch (UnsupportedEncodingException e) {
                 fail(geneQuery,"Failed to URL-encode TBLASTN query!");
