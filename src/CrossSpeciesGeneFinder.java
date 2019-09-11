@@ -45,7 +45,7 @@ public class CrossSpeciesGeneFinder {
         textArea.setFont(new Font("monospaced", Font.PLAIN, 12));
         textArea.setEditable (false);
 
-        JFrame frame = new JFrame ("Cross-Species Gene Finder");
+        final JFrame frame = new JFrame ("Cross-Species Gene Finder");
         frame.setDefaultCloseOperation (JFrame.DO_NOTHING_ON_CLOSE);
 
         frame.addWindowListener(new WindowAdapter() {
@@ -255,13 +255,40 @@ public class CrossSpeciesGeneFinder {
             String aminoSeq = null;
             String geneName = null;
             Scanner sc1 = null;
+            Scanner scGetFASTALink = null;
+            String fastaLink = null;
+            String fastaParam = null;
+            String fastaId = null;
             try {
-                // https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&save=file&log$=seqview&db=nuccore&report=fasta&sort=&id=283973264&from=500&to=1000&maxplex=1
-                URL url1 = new URL("https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&sendto=on&log$=seqview&db=nuccore&dopt=fasta&sort=&val="+URLEncoder.encode(geneQuery, "UTF-8")+"&from=begin&to=end&maxplex=1");
+                URL urlGetFASTALink = new URL("https://www.ncbi.nlm.nih.gov/gene/?term="+URLEncoder.encode(geneQuery, "UTF-8"));
+                scGetFASTALink = new Scanner(urlGetFASTALink.openConnection().getInputStream());
+                boolean hasLink = false;
+                boolean hasId = false;
+                while(scGetFASTALink.hasNextLine()) {
+                    String line = scGetFASTALink.nextLine().trim();
+                    if(line.contains("<a title=\"Nucleotide FASTA report\"")) {
+                        hasLink = true;
+                        fastaParam = line.split("\"")[3].replaceAll("&amp;","&").split("\\?")[1];
+                        o.println("Got FASTA start/end points for " + geneQuery);
+                    } else if(line.contains("&amp;nuc_gi=")){
+                        hasId = true;
+                        fastaId = line.split("&amp;nuc_gi=")[1].split("&")[0];
+                        o.println("Got FASTA nuc_gi ID for " + geneQuery);
+                    }
+                    if(hasLink && hasId) {
+                        fastaLink= "https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?"+fastaParam+"&id="+fastaId+"&tool=portal&save=file&log$=seqview&db=nuccore&extrafeat=null&conwithfeat=on&hide-cdd=on";
+                        break;
+                    }
+                }
+                if(!hasLink || !hasId) {
+                    throw new IOException(); // hacky
+                }
+                URL url1 = new URL(fastaLink);
                 sc1 = new Scanner(url1.openConnection().getInputStream());
                 sc1.useDelimiter("\0");
-                aminoSeq = sc1.next().trim();
-                geneName = aminoSeq.split("\n")[0].split(" ",2)[1].trim();
+                String tNxt = sc1.next().trim();
+                aminoSeq = tNxt.split("\n",2)[1].replaceAll("\n","");
+                geneName = tNxt.split("\n",2)[0].split(" ",2)[1].trim();
                 o.println("Gene name: "+ geneName);
                 printlnFlush("NCBI Gene Query Used: " + geneQuery + " - " + geneName);
             } catch (MalformedURLException e) {
@@ -280,12 +307,14 @@ public class CrossSpeciesGeneFinder {
                 fail(geneQuery,"Gene query not found in NCBI database! (or they changed their HTML)");
                 continue;
             } finally {
+                if(scGetFASTALink != null) scGetFASTALink.close();
                 if(sc1 != null) sc1.close();
             }
             String tblastnRID = "";
             try {
                 o.print("Starting TBLASTN... ");
-                String tblastnQuery = "CMD=Put&QUERY="+URLEncoder.encode(aminoSeq, "UTF-8")+"&BLAST_SPEC=Assembly&PROGRAM=tblastn&SERVICE=plain&DATABASE="+URLEncoder.encode(dbname1, "UTF-8");
+                // problem here
+                String tblastnQuery = "CMD=Put&QUERY="+URLEncoder.encode(aminoSeq, "UTF-8")+"&BLAST_SPEC=Assembly&PROGRAM=tblastn&FORMAT_TYPE=text&DATABASE="+URLEncoder.encode(dbname1, "UTF-8");
                 tblastnRID = doBlastAndGetRID(tblastnQuery,wInfo);
             } catch (UnsupportedEncodingException e) {
                 fail(geneQuery,"Failed to URL-encode TBLASTN query!");
@@ -449,7 +478,7 @@ public class CrossSpeciesGeneFinder {
                 o.print("Starting BLASTX to verify results... ");
                 String blastxRID = "";
                 try {
-                    String blastxQuery = "CMD=Put&QUERY="+URLEncoder.encode(strFASTA, "UTF-8")+"&PROGRAM=blastx&SERVICE=plain&DATABASE=nr";
+                    String blastxQuery = "CMD=Put&QUERY="+URLEncoder.encode(strFASTA, "UTF-8")+"&PROGRAM=blastx&FORMAT_TYPE=text&DATABASE=nr";
                     blastxRID = doBlastAndGetRID(blastxQuery,wInfo);
                     printlnFlush("BLASTX Results Link: https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Get&RID="+blastxRID);
                 } catch (UnsupportedEncodingException e) {
@@ -518,19 +547,23 @@ public class CrossSpeciesGeneFinder {
 
     private static String doBlastAndGetRID(String query,PrintWriter wInfo) throws IOException, MalformedURLException, ArrayIndexOutOfBoundsException, NullPointerException {
         boolean blastx = query.contains("&PROGRAM=blastx&");
-        String blastRID = "";
+        String blastRID = null;
         int i = 0;
         do { // no retry if blastx
-            InputStream postStream = Utils.doPost("https://www.ncbi.nlm.nih.gov/blast/Blast.cgi",query);
+            InputStream postStream = Utils.doPost("https://blast.ncbi.nlm.nih.gov/blast/Blast.cgi",query);
             Scanner sc4 = new Scanner(postStream);
-            blastRID = "";
+            blastRID = null;
             while(sc4.hasNextLine()) {
                 String line = sc4.nextLine().trim();
                 if(line.startsWith("RID = ")) {
                     blastRID = line.split("=")[1].trim();
+                    break;
                 }
             }
             sc4.close();
+            if(blastRID == null) {
+                throw new IOException(); // hacky
+            }
             o.println("Query RID is " + blastRID);
 
             String blastStatus = "WAITING";

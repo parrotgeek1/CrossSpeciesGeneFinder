@@ -1,5 +1,5 @@
 #!/bin/sh
-javac src/*.java
+javac --release 7 -Xlint:-options src/*.java
 rm -f CSGF.jar
 cd src
 jar cvfe ../CSGF.jar CrossSpeciesGeneFinder `find . -type f -name '*.class' -or -name '*.wav'`
